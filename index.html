@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout and Meal Plan App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .step {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Personalized Workout and Meal Plan App</h1>
+
+    <!-- Step 1: Personal Information -->
+    <div id="step-1" class="step" style="display: block;">
+      <h2>Step 1: Personal Information</h2>
+      <form id="personal-info-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age" required>
+
+        <label for="weight">Weight (in kg):</label>
+        <input type="number" id="weight" name="weight" required>
+
+        <label for="height-feet">Height (Feet):</label>
+        <input type="number" id="height-feet" name="heightFeet" required>
+
+        <label for="height-inches">Height (Inches):</label>
+        <input type="number" id="height-inches" name="heightInches" required>
+
+        <label for="gender">Gender:</label>
+        <select id="gender" name="gender">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+
+        <button type="submit">Next</button>
+      </form>
+    </div>
+
+    <!-- Step 2: Fitness Goals -->
+    <div id="step-2" class="step">
+      <h2>Step 2: Fitness Goals</h2>
+      <form id="goals-form">
+        <label for="goals">Fitness Goals:</label>
+        <textarea id="goals" name="goals" required></textarea>
+
+        <label for="dietary-restrictions">Dietary Restrictions (optional):</label>
+        <textarea id="dietary-restrictions" name="dietaryRestrictions"></textarea>
+
+        <button type="submit">Generate Plan</button>
+      </form>
+    </div>
+
+    <!-- Step 3: Display Plan -->
+    <div id="step-3" class="step">
+      <h2>Your Plan</h2>
+      <div id="plan-output"></div>
+    </div>
+  </div>
+
+  <script>
+    // Step 1: Collect personal info
+    document.getElementById("personal-info-form").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      // Store user data
+      const name = document.getElementById("name").value;
+      const age = document.getElementById("age").value;
+      const weight = document.getElementById("weight").value;
+      const heightFeet = document.getElementById("height-feet").value;
+      const heightInches = document.getElementById("height-inches").value;
+      const gender = document.getElementById("gender").value;
+
+      localStorage.setItem("userData", JSON.stringify({
+        name, age, weight, heightFeet, heightInches, gender
+      }));
+
+      // Move to step 2
+      document.getElementById("step-1").style.display = "none";
+      document.getElementById("step-2").style.display = "block";
+    });
+
+    // Step 2: Collect fitness goals and dietary restrictions
+    document.getElementById("goals-form").addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      // Get fitness goals and dietary restrictions
+      const goals = document.getElementById("goals").value;
+      const dietaryRestrictions = document.getElementById("dietary-restrictions").value;
+
+      const userData = JSON.parse(localStorage.getItem("userData"));
+
+      const prompt = `Create a personalized workout and meal plan for a ${userData.age}-year-old ${userData.gender} who is ${userData.heightFeet} feet ${userData.heightInches} inches tall, weighing ${userData.weight} kg. Their fitness goals are: ${goals}. They have the following dietary restrictions: ${dietaryRestrictions || "none"}. Provide a detailed weekly plan with daily workouts and meals.`;
+
+      const plan = await generatePlan(prompt);
+
+      // Display the plan
+      document.getElementById("plan-output").innerHTML = `<pre>${plan}</pre>`;
+      document.getElementById("step-2").style.display = "none";
+      document.getElementById("step-3").style.display = "block";
+    });
+
+    // Function to generate plan using OpenAI API
+    async function generatePlan(prompt) {
+      try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer Ysk-proj-URufN8iYQyqoAgeJg4RQbIHSOQkiZL8ZhnQXQKODEOyXD4FB2XJdAlVC9SO2aSwp_7StYF_TixT3BlbkFJkqlIwNwczDZHQbHM8bxWWFT2e3Yv9_rpY7rNch2HtCPC3ExOGOrqtRnBOsdrnr-ZDColCkxRkA` // Replace with your actual OpenAI API key
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "system",
+                content: "You are a professional fitness trainer and nutritionist. Create detailed, personalized workout and meal plans."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            max_tokens: 1000
+          })
+        });
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } catch (error) {
+        console.error("Error generating plan:", error);
+        return "Error generating plan. Please try again later.";
+      }
+    }
+  </script>
+</body>
+</html>
